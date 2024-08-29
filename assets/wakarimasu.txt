@@ -1,7 +1,7 @@
 // NameAndDateRecords.c
 // Description: A program that accepts names and birth dates, stores them in dynamically allocated memory, and displays them sorted
 // Version: 29August2024
-// Copyright: 
+// Copyright:
 
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +20,7 @@ typedef struct {
 } Person;
 
 int validateDate(long date);
+int validateName(const char* name);
 
 int main() {
     int count = 0;
@@ -36,41 +37,34 @@ int main() {
     string errorMessage = "Incorrect name format.\n";
     string dateErrorMessage = "Date format error! Please re-enter date (YYYYMMDD).\n";
     string emptyDateErrorMessage = "Empty date error!\n";
-    char c;
-    int length = 0;
-    int i, j;
-    Person* temp;
 
     printf("%s", intro);
 
     // Get records
     while (count < MAXCOUNT && !error) {
         printf("%s", nameInputPrompt);
-        length = 0;
-        // Get a name
-        while ((c = getchar())) {
-            if (c != '\n') {
-                if (length < MAXLENGTH - 1) {
-                    nameInput[length++] = c;
-                }
-            } else {
-                if (c == '\n' && length > 0) {
-                    nameInput[length] = '\0';
-                    records[count] = malloc(sizeof(Person));
-                    assert(records[count] != NULL);
-                    records[count]->name = malloc(strlen(nameInput) + 1);
-                    assert(records[count]->name != NULL);
-                    strcpy(records[count]->name, nameInput);
-                    break;
-                } else {
-                    error = 1;
-                    printf("%s", errorMessage);
-                    break;
-                }
-            }
+        if (!fgets(nameInput, MAXLENGTH, stdin) || nameInput[0] == '\n') {
+            printf("%s", errorMessage);
+            error = 1;
+            break;
         }
 
-        if (error) break;
+        nameInput[strcspn(nameInput, "\n")] = '\0'; // Remove newline character
+
+//        if (!validateName(nameInput)) {
+//            printf("%s", errorMessage);
+//            continue; // Skip to the next iteration to get a valid name
+//        }
+		if (!validateName(nameInput)) {
+            printf("%s", errorMessage);
+            exit(1); // Exit the program on invalid name input
+        }
+
+        records[count] = malloc(sizeof(Person));
+        assert(records[count] != NULL);
+        records[count]->name = malloc(strlen(nameInput) + 1);
+        assert(records[count]->name != NULL);
+        strcpy(records[count]->name, nameInput);
 
         // Get birthdate
         while (1) {
@@ -97,10 +91,12 @@ int main() {
 
     if (!error) {
         // Bubble sort the records by name
+        int i;
+        int j;
         for (i = 0; i < count - 1; i++) {
             for (j = i + 1; j < count; j++) {
                 if (strcmp(records[i]->name, records[j]->name) > 0) {
-                    temp = records[i];
+                    Person* temp = records[i];
                     records[i] = records[j];
                     records[j] = temp;
                 }
@@ -119,7 +115,7 @@ int main() {
     return 0;
 }
 
-// Validate the date
+// Function to validate the date
 int validateDate(long date) {
     int year = date / 10000;
     int month = (date / 100) % 100;
@@ -138,4 +134,15 @@ int validateDate(long date) {
     }
 
     return 1;
+}
+
+// Function to validate the name
+int validateName(const char* name) {
+	int i;
+    for ( i = 0; name[i] != '\0'; i++) {
+        if (!isalpha(name[i]) && name[i] != '.') {
+            return 0; // Invalid character found
+        }
+    }
+    return 1; // All characters are valid
 }
